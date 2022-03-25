@@ -258,87 +258,87 @@ func (t *handshakeTransport) resetWriteThresholds() {
 
 func (t *handshakeTransport) kexLoop() {
 
-write:
-	for t.getWriteError() == nil {
-		var request *pendingKex
-		var sent bool
+	// write:
+	// 	for t.getWriteError() == nil {
+	// 		var request *pendingKex
+	// 		var sent bool
 
-		for request == nil || !sent {
-			var ok bool
-			select {
-			case request, ok = <-t.startKex:
-				if !ok {
-					break write
-				}
-			case <-t.requestKex:
-				break
-			}
+	// 		for request == nil || !sent {
+	// 			var ok bool
+	// 			select {
+	// 			case request, ok = <-t.startKex:
+	// 				if !ok {
+	// 					break write
+	// 				}
+	// 			case <-t.requestKex:
+	// 				break
+	// 			}
 
-			if !sent {
-				if err := t.sendKexInit(); err != nil {
-					t.recordWriteError(err)
-					break
-				}
-				sent = true
-			}
-		}
+	// 			if !sent {
+	// 				if err := t.sendKexInit(); err != nil {
+	// 					t.recordWriteError(err)
+	// 					break
+	// 				}
+	// 				sent = true
+	// 			}
+	// 		}
 
-		if err := t.getWriteError(); err != nil {
-			if request != nil {
-				request.done <- err
-			}
-			break
-		}
+	// 		if err := t.getWriteError(); err != nil {
+	// 			if request != nil {
+	// 				request.done <- err
+	// 			}
+	// 			break
+	// 		}
 
-		// We're not servicing t.requestKex, but that is OK:
-		// we never block on sending to t.requestKex.
+	// 		// We're not servicing t.requestKex, but that is OK:
+	// 		// we never block on sending to t.requestKex.
 
-		// We're not servicing t.startKex, but the remote end
-		// has just sent us a kexInitMsg, so it can't send
-		// another key change request, until we close the done
-		// channel on the pendingKex request.
+	// 		// We're not servicing t.startKex, but the remote end
+	// 		// has just sent us a kexInitMsg, so it can't send
+	// 		// another key change request, until we close the done
+	// 		// channel on the pendingKex request.
 
-		err := t.enterKeyExchange(request.otherInit)
+	// 		//err := t.enterKeyExchange(request.otherInit)
 
-		t.mu.Lock()
-		t.writeError = err
-		t.sentInitPacket = nil
-		t.sentInitMsg = nil
+	// 		t.mu.Lock()
+	// 		//t.writeError = err
+	// 		t.sentInitPacket = nil
+	// 		t.sentInitMsg = nil
 
-		t.resetWriteThresholds()
+	// 		t.resetWriteThresholds()
 
-		// we have completed the key exchange. Since the
-		// reader is still blocked, it is safe to clear out
-		// the requestKex channel. This avoids the situation
-		// where: 1) we consumed our own request for the
-		// initial kex, and 2) the kex from the remote side
-		// caused another send on the requestKex channel,
-	clear:
-		for {
-			select {
-			case <-t.requestKex:
-				//
-			default:
-				break clear
-			}
-		}
+	// 		// we have completed the key exchange. Since the
+	// 		// reader is still blocked, it is safe to clear out
+	// 		// the requestKex channel. This avoids the situation
+	// 		// where: 1) we consumed our own request for the
+	// 		// initial kex, and 2) the kex from the remote side
+	// 		// caused another send on the requestKex channel,
+	// 	clear:
+	// 		for {
+	// 			select {
+	// 			case <-t.requestKex:
+	// 				//
+	// 			default:
+	// 				break clear
+	// 			}
+	// 		}
 
-		request.done <- t.writeError
+	// 		request.done <- t.writeError
 
-		// kex finished. Push packets that we received while
-		// the kex was in progress. Don't look at t.startKex
-		// and don't increment writtenSinceKex: if we trigger
-		// another kex while we are still busy with the last
-		// one, things will become very confusing.
-		for _, p := range t.pendingPackets {
-			t.writeError = t.pushPacket(p)
-			if t.writeError != nil {
-				break
-			}
-		}
-		t.pendingPackets = t.pendingPackets[:0]
-		t.mu.Unlock()
-	}
+	// 		// kex finished. Push packets that we received while
+	// 		// the kex was in progress. Don't look at t.startKex
+	// 		// and don't increment writtenSinceKex: if we trigger
+	// 		// another kex while we are still busy with the last
+	// 		// one, things will become very confusing.
+	// 		for _, p := range t.pendingPackets {
+	// 			t.writeError = t.pushPacket(p)
+	// 			if t.writeError != nil {
+	// 				break
+	// 			}
+	// 		}
+	// 		t.pendingPackets = t.pendingPackets[:0]
+	// 		t.mu.Unlock()
+	// 	}
 
 	// drain startKex channel. We don't service t.requestKex
 	// because nobody does blocking sends there.
