@@ -128,6 +128,8 @@ var cipherModes = map[string]*cipherMode{
 	// 3des-cbc is insecure and is not included in the default
 	// config.
 	tripledescbcID: {24, des.BlockSize, newTripleDESCBCCipher},
+
+	"none": {16, 0, streamCipherMode(0, newAESCTR)},
 }
 
 // prefixLen is the length of the packet prefix that contains the packet length
