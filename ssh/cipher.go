@@ -107,7 +107,6 @@ var cipherModes = map[string]*cipherMode{
 	// They are defined in the order specified in the RFC.
 	"arcfour128": {16, 0, streamCipherMode(1536, newRC4)},
 	"arcfour256": {32, 0, streamCipherMode(1536, newRC4)},
-	"none":       {16, 0, streamCipherMode(0, newAESCTR)},
 
 	// Cipher defined in RFC 4253, which describes SSH Transport Layer Protocol.
 	// Note that this cipher is not safe, as stated in RFC 4253: "Arcfour (and
