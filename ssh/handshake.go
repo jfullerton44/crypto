@@ -17,7 +17,7 @@ import (
 // debugHandshake, if set, prints messages sent and received.  Key
 // exchange messages are printed as if DH were used, so the debug
 // messages are wrong when using ECDH.
-const debugHandshake = false
+const debugHandshake = true
 
 // chanSize sets the amount of buffering SSH connections. This is
 // primarily for testing: setting chanSize=0 uncovers deadlocks more
@@ -298,10 +298,10 @@ write:
 		// another key change request, until we close the done
 		// channel on the pendingKex request.
 
-		err := t.enterKeyExchange(request.otherInit)
+		//err := t.enterKeyExchange(request.otherInit)
 
 		t.mu.Lock()
-		t.writeError = err
+		t.writeError = nil
 		t.sentInitPacket = nil
 		t.sentInitMsg = nil
 
@@ -582,38 +582,38 @@ func (t *handshakeTransport) enterKeyExchange(otherInitPacket []byte) error {
 		}
 	}
 
-	kex, ok := kexAlgoMap[t.algorithms.kex]
+	_, ok := kexAlgoMap[t.algorithms.kex]
 	if !ok {
 		return fmt.Errorf("ssh: unexpected key exchange algorithm %v", t.algorithms.kex)
 	}
 
-	var result *kexResult
-	if len(t.hostKeys) > 0 {
-		result, err = t.server(kex, t.algorithms, &magics)
-	} else {
-		result, err = t.client(kex, t.algorithms, &magics)
-	}
+	var result *kexResult = &kexResult{}
+	// if len(t.hostKeys) > 0 {
+	// 	result, err = t.server(kex, t.algorithms, &magics)
+	// } else {
+	// 	result, err = t.client(kex, t.algorithms, &magics)
+	// }
 
 	if err != nil {
 		return err
 	}
 
-	if t.sessionID == nil {
-		t.sessionID = result.H
-	}
+	// if t.sessionID == nil {
+	// 	t.sessionID =
+	// }
 	result.SessionID = t.sessionID
 
-	if err := t.conn.prepareKeyChange(t.algorithms, result); err != nil {
-		return err
-	}
-	if err = t.conn.writePacket([]byte{msgNewKeys}); err != nil {
-		return err
-	}
-	if packet, err := t.conn.readPacket(); err != nil {
-		return err
-	} else if packet[0] != msgNewKeys {
-		return unexpectedMessageError(msgNewKeys, packet[0])
-	}
+	// if err := t.conn.prepareKeyChange(t.algorithms, result); err != nil {
+	// 	return err
+	// }
+	// if err = t.conn.writePacket([]byte{msgNewKeys}); err != nil {
+	// 	return err
+	// }
+	// if packet, err := t.conn.readPacket(); err != nil {
+	// 	return err
+	// } else if packet[0] != msgNewKeys {
+	// 	return unexpectedMessageError(msgNewKeys, packet[0])
+	// }
 
 	return nil
 }
